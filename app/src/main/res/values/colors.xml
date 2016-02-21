@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <!--colors.xml-->
+    <resources>
+        <color name="style_color_primary">#00A8E8</color>
+        <color name="style_color_primary_dark">#003459</color>
+        <color name="style_color_accent">#75ABBC</color>
+        <color name="black_overlay">#66000000</color>
+
+        <color name="btn_default_light_normal">#00000000</color>
+        <color name="btn_default_light_pressed">#40ffffff</color>
+
+        <color name="fab_color_pressed">#007787</color>
+        <color name="fab_color_shadow">#44000000</color>
+    </resources>
+
