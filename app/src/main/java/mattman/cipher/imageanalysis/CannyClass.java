@@ -19,7 +19,7 @@ public class CannyClass {
     public Bitmap ImageSegmentation(Bitmap originalImage, int threshold) {
 
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
-        //!
+    
         Mat markers2 = new Mat();
         Mat imageMatRGBA = new Mat();
         Utils.bitmapToMat(originalImage, imageMatRGBA, false);
@@ -32,6 +32,8 @@ public class CannyClass {
         Imgproc.dilate(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
         Imgproc.erode(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,2)));
 
+
+        /* Here is the segmentation part
         //Imgproc.floodFill(imageMatEdge, imageMatEdge,new Point(0,0),new Scalar(255,255,255));
         //Mat mask = new Mat( imageMatEdge.rows()+2, imageMatEdge.cols()+2, CvType.CV_8U, Scalar.all(0));
         //Imgproc.floodFill(imageMatEdge, imageMatEdge,new Point(0,0),new Scalar(255));
@@ -41,12 +43,10 @@ public class CannyClass {
         //Imgproc.dilate(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
 
         // Finding background
-       /* Mat bg = new Mat(imageMatEdge.size(),CvType.CV_8SC1);
+        Mat bg = new Mat(imageMatEdge.size(),CvType.CV_8SC1);
         Imgproc.dilate(imageMatEdge,bg,new Mat(),new Point(-1,-1),3);
         Imgproc.threshold(bg,bg,1, 128,Imgproc.THRESH_BINARY_INV);
         */
-
-
 
         //Scalar colorDiff = Scalar.all(0);
         //imageMatRGBA.copyTo(colorDiff, imageMatEdge);

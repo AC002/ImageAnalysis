@@ -25,6 +25,7 @@ public class WatershedClass {
         //!
         Mat markers2 = new Mat();
         Bitmap safeOriginalImage = originalImage;
+
         // Creating two Mats, for RGBA and RGB
         Mat imageMatRGBA = new Mat();
         Utils.bitmapToMat(safeOriginalImage, imageMatRGBA, false);
@@ -50,20 +51,10 @@ public class WatershedClass {
         Mat markers = new Mat(imageMatRGB.size(),CvType.CV_8SC1, new Scalar(0));
         Core.add(fg, bg, markers);
 
-        //WatershedSegmenter segmenter = new WatershedSegmenter();
-
-        // Logs for finding out number of channels
-        //Log.i(TAG, "We have " + markers.channels() + " channels in marker!");
-        //Log.i(TAG, "We have " + imageMatRGB.channels() + " channels in imageMatRGB!");
-
         Log.i(TAG, "Setting markers...");
-        //segmenter.setMarkers(markers);
 
         //!
         markers.convertTo(markers2, CvType.CV_32SC1);
-
-        //Mat result = new Mat();
-        //result = segmenter.process(imageMatRGB);
 
         Imgproc.watershed(imageMatRGB, markers2);
         markers2.convertTo(markers2, CvType.CV_8U);
@@ -72,7 +63,6 @@ public class WatershedClass {
         Bitmap bitmap;
         bitmap = originalImage;
 
-        //result.release();
         binaryChannel.release();
         markers.release();
         bg.release();

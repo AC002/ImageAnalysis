@@ -63,21 +63,18 @@ public class MainActivity extends AppCompatActivity {
     // Used in logic to deny menus
     int STATE = 0;
 
-    // Animation
-    Animation animateUp, animateDown;
-
-    @Bind(R.id.mImageView) ImageView mImageView;
+    // Binding all important things using the ButterKnife
     //@Bind(R.id.mTextViewThreshold) TextView mTextViewThreshold;
-    @Bind(R.id.seekBar) SeekBar seekBar;
     //@Bind(R.id.cameraImageButton) ImageButton cameraImageButton;
     //@Bind(R.id.galleryImageButton) ImageButton galleryImageButton;
+    @Bind(R.id.mImageView) ImageView mImageView;
+    @Bind(R.id.seekBar) SeekBar seekBar;
     @Bind(R.id.fabPhoto) FloatingActionButton fabPhoto;
     @Bind(R.id.fabFolder) FloatingActionButton fabFolder;
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.bottombar) Toolbar bottombar;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
@@ -100,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         else if(imageOriginal!=null) mImageView.setImageBitmap(imageOriginal);
 
         super.onResume();
+        // Also check OpenCV
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
@@ -109,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Creating classes which are used to modify image
     WatershedClass watershedFunction = new WatershedClass();
     GrabCutClass grabcutFunction = new GrabCutClass();
     BinarizationClass binarizationFunction = new BinarizationClass();
@@ -118,10 +117,12 @@ public class MainActivity extends AppCompatActivity {
     // For file saving so each is unique, date and time
     Calendar calendar = Calendar.getInstance();
 
+    // Two important bitmaps, used to always hold 1 step back
     Bitmap imageOriginal, imageModified;
+    // Standard threshold for binarization/canny/others
     int threshold = 128;
+    // Special values for grabCut
     boolean grabCutBadSelection = false;
-
     int positionXStart = 0;
     int positionYStart = 0;
     int positionXEnd = 0;
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedState) {
-        // Load savestate, if rotated screen or something
+        // Load savestate, if rotated screen or something happened
         super.onCreate(savedState);
         if (savedState != null) {
             imageModified = savedState.getParcelable("modifiedBitmap");
@@ -138,29 +139,27 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG,"OnCreate");
         // Butterknife for easier View binding
         ButterKnife.bind(this);
 
         // Set toolbar
         setSupportActionBar(toolbar);
 
-        //mTextViewThreshold.setVisibility(View.VISIBLE);
         seekBar.setEnabled(false);
         seekBar.setVisibility(View.VISIBLE);
 
-        // Seekbar, to change threshold
+        // Seekbar, to change threshold value
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 threshold = progress;
-                //mTextViewThreshold.setText(Integer.toString(threshold));
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
 
+            // When user stops touching, the value is being used for current option
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 if (STATE == 1) {
@@ -188,7 +187,8 @@ public class MainActivity extends AppCompatActivity {
                 dispatchTakeFromFileIntent();
             }
         });
-/*
+
+/* //For future
         cameraImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -204,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
 
         });*/
 
+        // If image is pressed anywhere, use animation to hide toolbar and FAB buttons
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -222,11 +223,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Function for animating toolbar based on state
     public void animateToolbar(int state){
-
         switch(state){
 
-            // Case 0 is "close toolbar"
             case TOOLBAR_HIDDEN:
                 toolbar.animate()
                         .translationY(-toolbar.getHeight())
@@ -234,7 +234,6 @@ public class MainActivity extends AppCompatActivity {
                         .setDuration(180);
                 break;
 
-            // Case 1 is "open toolbar"
             case TOOLBAR_SHOWED:
                 toolbar.animate()
                         .translationY(0)
@@ -276,15 +275,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        Log.d("TESTI", "ONTOUCHEVENTINSIDE!");
-        // Part needed for grabcut
-     //   int x = (int) event.getX();
-       // int y = (int) event.getY();
+        // Part needed for grabcut - for now it is constant - ignore
+        // int x = (int) event.getX();
+        // int y = (int) event.getY();
 
         //int[] viewCoords = new int[2];
         //mImageView.getLocationOnScreen(viewCoords);
@@ -292,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         //Log.i(TAG, "ViewCoords1: " + viewCoords[1]);
 
         // Additional for hiding bottombar with gesture
-        int action = MotionEventCompat.getActionMasked(event);
+        /*int action = MotionEventCompat.getActionMasked(event);
 
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -312,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "PositionXE: " + positionXEnd);
                 Log.i(TAG, "PositionYE: " + positionYEnd);
                 break;
-        }
+        }*/
         /*if (positionXStart < 0 || positionXEnd > viewCoords[0] || positionYStart < 0 || positionYEnd > viewCoords[0]){
             grabCutBadSelection = true;
             Toast.makeText(this, "Bad selection!", Toast.LENGTH_SHORT).show();
@@ -337,19 +333,18 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(Intent.createChooser(takeFromFileIntent, "Select Picture"), PICK_IMAGE);
     }
 
+    // Saving file to /DCIM/100ANDRO
     private void dispatchSaveFile(){
-
-        int seconds = calendar.get(Calendar.SECOND);
         mImageView.buildDrawingCache();
         Bitmap bm = mImageView.getDrawingCache();
         OutputStream fOut = null;
         Uri outputFileUri;
         try {
-
+            // Change these lines if you want to change save position
             File root = Environment.getExternalStorageDirectory();
             File cachePath = new File(root.getAbsolutePath() + "/DCIM/100ANDRO/");
-
             File sdImageMainDirectory = new File(cachePath, "save"+getCurrentDateAndTime()+".jpg");
+
             outputFileUri = Uri.fromFile(sdImageMainDirectory);
             fOut = new FileOutputStream(sdImageMainDirectory);
 
@@ -371,8 +366,6 @@ public class MainActivity extends AppCompatActivity {
     private void showOriginalImage() {
         mImageView.setImageResource(0);
         mImageView.setImageBitmap(imageOriginal);
-        //mTextViewThreshold.setVisibility(View.VISIBLE);
-        //mTextViewThreshold.setEnabled(false);
         seekBar.setEnabled(false);
         seekBar.setVisibility(View.VISIBLE);
     }
@@ -380,28 +373,24 @@ public class MainActivity extends AppCompatActivity {
     private void useWatershed() {
         imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
         mImageView.setImageBitmap(imageModified);
-        //mTextViewThreshold.setEnabled(true);
         seekBar.setEnabled(true);
     }
 
     private void useGrabCut() {
         imageModified = grabcutFunction.ImageSegmentation(imageOriginal, positionXStart, positionYStart, positionXEnd, positionYEnd);
         mImageView.setImageBitmap(imageModified);
-        //mTextViewThreshold.setEnabled(false);
         seekBar.setEnabled(false);
     }
 
     private void useBinarization() {
         imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
         mImageView.setImageBitmap(imageModified);
-        //mTextViewThreshold.setEnabled(true);
         seekBar.setEnabled(true);
     }
 
     private void useMeanShift() {
         imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
         mImageView.setImageBitmap(imageModified);
-        //mTextViewThreshold.setEnabled(false);
         seekBar.setEnabled(false);
 
     }
@@ -409,7 +398,6 @@ public class MainActivity extends AppCompatActivity {
     private void useCanny() {
         imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
         mImageView.setImageBitmap(imageModified);
-        //mTextViewThreshold.setEnabled(true);
         seekBar.setEnabled(true);
     }
 
@@ -438,33 +426,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-   /* @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        // Checks the orientation of the screen
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if(imageOriginal != null) {
-
-                mImageView.setImageBitmap(imageOriginal);
-            }
-            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            if(imageOriginal != null) mImageView.setImageBitmap(imageOriginal);
-            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
-        }
-    }*/
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        // Adding custom menuItem
-        // MenuItem inboxMenuItem = menu.findItem(R.id.options_button);
-        //inboxMenuItem.setActionView(R.layout.menu_item_view);
         return true;
     }
 
+    // Checking which option is selected
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
@@ -475,7 +444,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
 
-        // Menu button responsible for Segmentation
         if (id == R.id.watershed) {
             useWatershed();
             STATE = STATE_WATERSHED;
@@ -525,15 +493,17 @@ public class MainActivity extends AppCompatActivity {
             if(imageModified!=null){
                 imageOriginal = imageModified;
             }
+            // Trying to overwrite the original image while not seeing the modified one
+            // Disabling it so it wont confuse the user
             else {
                 Toast.makeText(this,"Sorry I can't do that Dave",Toast.LENGTH_SHORT).show();
             }
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
+    // Modifing the menus (disable 2 to 8) (should make it dynamic, maybe later)
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         boolean boolEnable;
@@ -563,8 +533,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onSaveInstanceState(Bundle toSave) {
         super.onSaveInstanceState(toSave);
-        //if(imageModified!=null) toSave.putParcelable("modifiedBitmap", imageModified);
-        //if(imageOriginal!=null) toSave.putParcelable("originalBitmap", imageOriginal);
         toSave.putParcelable("modifiedBitmap", imageModified);
         toSave.putParcelable("originalBitmap", imageOriginal);
     }

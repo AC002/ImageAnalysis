@@ -22,10 +22,9 @@ public class GrabCutClass {
 
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
 
-//GrabCut part
+        //GrabCut part
         Mat img = new Mat();
         Utils.bitmapToMat(originalImage, img);
-        Log.d(TAG, "img: " + img);
         boolean debug = false;
 
         Rect rect;
@@ -48,11 +47,9 @@ public class GrabCutClass {
         Mat mask = new Mat();
         Mat fgdModel = new Mat();
         Mat bgdModel = new Mat();
-        Log.i(TAG, "ForeGround and BackGround models");
 
         Mat imgC3 = new Mat();
         Imgproc.cvtColor(img, imgC3, Imgproc.COLOR_RGBA2RGB);
-        Log.d(TAG, "imgC3: " + imgC3);
 
         Log.d(TAG, "Grabcut begins");
         Imgproc.grabCut(imgC3, mask, rect, bgdModel, fgdModel, 2, Imgproc.GC_INIT_WITH_RECT);
@@ -60,7 +57,6 @@ public class GrabCutClass {
 
         Core.convertScaleAbs(mask, mask, 100, 0);
         Imgproc.cvtColor(mask, mask, Imgproc.COLOR_GRAY2RGBA);
-        Log.d(TAG, "maskC4: " + mask);
 
         Log.d(TAG, "Convert to Bitmap");
 
