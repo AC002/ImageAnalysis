@@ -19,7 +19,7 @@ public class CannyClass {
     public Bitmap ImageSegmentation(Bitmap originalImage, int threshold) {
 
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
-    
+
         Mat markers2 = new Mat();
         Mat imageMatRGBA = new Mat();
         Utils.bitmapToMat(originalImage, imageMatRGBA, false);
