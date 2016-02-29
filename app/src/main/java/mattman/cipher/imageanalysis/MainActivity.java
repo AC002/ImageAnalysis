@@ -363,42 +363,54 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"Image saved", Toast.LENGTH_SHORT).show();
     }
 
-    private void showOriginalImage() {
-        mImageView.setImageResource(0);
-        mImageView.setImageBitmap(imageOriginal);
-        seekBar.setEnabled(false);
-        seekBar.setVisibility(View.VISIBLE);
-    }
+    private void modifyImage(){
 
-    private void useWatershed() {
-        imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
-        mImageView.setImageBitmap(imageModified);
-        seekBar.setEnabled(true);
-    }
+        switch(STATE){
+            case STATE_ORIGINAL:
+                mImageView.setImageResource(0);
+                mImageView.setImageBitmap(imageOriginal);
+                seekBar.setEnabled(false);
+                seekBar.setVisibility(View.VISIBLE);
+                break;
 
-    private void useGrabCut() {
-        imageModified = grabcutFunction.ImageSegmentation(imageOriginal, positionXStart, positionYStart, positionXEnd, positionYEnd);
-        mImageView.setImageBitmap(imageModified);
-        seekBar.setEnabled(false);
-    }
+            case STATE_BINARY:
+                imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
+                mImageView.setImageBitmap(imageModified);
+                seekBar.setEnabled(true);
+                break;
 
-    private void useBinarization() {
-        imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
-        mImageView.setImageBitmap(imageModified);
-        seekBar.setEnabled(true);
-    }
+            case STATE_CANNY:
+                imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
+                mImageView.setImageBitmap(imageModified);
+                seekBar.setEnabled(true);
+                //progressbar.setVisibility(View.VISIBLE);
+                break;
 
-    private void useMeanShift() {
-        imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
-        mImageView.setImageBitmap(imageModified);
-        seekBar.setEnabled(false);
+            case STATE_GRABCUT:
+                imageModified = grabcutFunction.ImageSegmentation(imageOriginal, positionXStart, positionYStart, positionXEnd, positionYEnd);
+                mImageView.setImageBitmap(imageModified);
+                seekBar.setEnabled(false);
+                //progressbar.setVisibility(View.VISIBLE);
+                break;
 
-    }
+            case STATE_MEANSHIFT:
+                imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
+                mImageView.setImageBitmap(imageModified);
+                seekBar.setEnabled(false);
+                //progressbar.setVisibility(View.VISIBLE);
+                break;
 
-    private void useCanny() {
-        imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
-        mImageView.setImageBitmap(imageModified);
-        seekBar.setEnabled(true);
+            case STATE_WATERSHED:
+                imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
+                mImageView.setImageBitmap(imageModified);
+                seekBar.setEnabled(true);
+                //progressbar.setVisibility(View.VISIBLE);
+                break;
+
+            default:
+                Toast.makeText(this,"This should not have happened",Toast.LENGTH_SHORT);
+                break;
+        }
     }
 
     // Method for getting the image made by camera from Intent
@@ -408,7 +420,8 @@ public class MainActivity extends AppCompatActivity {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
             imageOriginal = imageBitmap;
-            mImageView.setImageBitmap(imageBitmap);
+            mImageView.setImageResource(0);
+            mImageView.setImageBitmap(imageOriginal);
         }
 
         // This wont work with too big images!
@@ -417,12 +430,15 @@ public class MainActivity extends AppCompatActivity {
             Bitmap imageBitmap = null;
             try {
                 imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                imageOriginal = imageBitmap;
+                imageModified = null;
+                mImageView.setImageDrawable(null);
+                STATE = STATE_ORIGINAL;
+                modifyImage();
             } catch (IOException e) {
                 Toast.makeText(this, "Error while loading image!", Toast.LENGTH_SHORT).show();
                 e.printStackTrace();
             }
-            imageOriginal = imageBitmap;
-            mImageView.setImageBitmap(imageBitmap);
         }
     }
 
@@ -439,66 +455,50 @@ public class MainActivity extends AppCompatActivity {
 
         int id = item.getItemId();
 
-        if (id == R.id.photofromfile) {
-            dispatchTakeFromFileIntent();
-            return true;
-        }
-
-        if (id == R.id.watershed) {
-            useWatershed();
-            STATE = STATE_WATERSHED;
-            return true;
-        }
-
-        if (id == R.id.grabcut) {
-            useGrabCut();
-            STATE = STATE_GRABCUT;
-            return true;
-        }
-
-        if (id == R.id.binarization) {
-            useBinarization();
-            STATE = STATE_BINARY;
-            return true;
-        }
-
-        if (id == R.id.meanshift) {
-            useMeanShift();
-            STATE = STATE_MEANSHIFT;
-            return true;
-        }
-
-        if (id == R.id.canny) {
-            useCanny();
-            STATE = STATE_CANNY;
-            return true;
-        }
-
-        if (id == R.id.originalimage) {
-            Log.i(TAG, "ShowImage");
-            STATE = STATE_ORIGINAL;
-            showOriginalImage();
-            imageModified=null;
-            return true;
-        }
-
-        if (id == R.id.saveimage){
-            Log.i(TAG,"SaveImage");
-            dispatchSaveFile();
-            return true;
-        }
-
-        if (id == R.id.overwritebase){
-            Log.i(TAG,"NewImage");
-            if(imageModified!=null){
-                imageOriginal = imageModified;
-            }
-            // Trying to overwrite the original image while not seeing the modified one
-            // Disabling it so it wont confuse the user
-            else {
-                Toast.makeText(this,"Sorry I can't do that Dave",Toast.LENGTH_SHORT).show();
-            }
-            return true;
+        switch (id) {
+            case R.id.photofromfile:
+                dispatchTakeFromFileIntent();
+                return true;
+            case R.id.watershed:
+                STATE = STATE_WATERSHED;
+                modifyImage();
+                return true;
+            case R.id.grabcut:
+                STATE = STATE_GRABCUT;
+                modifyImage();
+                return true;
+            case R.id.binarization:
+                STATE = STATE_BINARY;
+                modifyImage();
+                return true;
+            case R.id.meanshift:
+                STATE = STATE_MEANSHIFT;
+                modifyImage();
+                return true;
+            case R.id.canny:
+                STATE = STATE_CANNY;
+                modifyImage();
+                return true;
+            case R.id.originalimage:
+                STATE = STATE_ORIGINAL;
+                modifyImage();
+                // Should be one more option to go back to modified one
+                // Eventually, create an array to hold multiple images!
+                imageModified = null;
+                return true;
+            case R.id.saveimage:
+                dispatchSaveFile();
+                return true;
+            case R.id.overwritebase:
+                if (imageModified != null) {
+                    imageOriginal = imageModified;
+                }
+                // Trying to overwrite the original image while not seeing the modified one
+                // Disabling it so it wont confuse the user
+                else {
+                    Toast.makeText(this, "Sorry I can't do that Dave", Toast.LENGTH_SHORT).show();
+                }
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
