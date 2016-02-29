@@ -1,10 +1,7 @@
 package com.ac002.imageanalysis;
 
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -116,12 +113,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+<<<<<<< HEAD:app/src/main/java/com/ac002/imageanalysis/MainActivity.java
+=======
+    // Creating classes which are used to modify image
+    WatershedClass watershedFunction = new WatershedClass();
+    GrabCutClass grabcutFunction = new GrabCutClass();
+    BinarizationClass binarizationFunction = new BinarizationClass();
+    MeanShiftClass meanShiftFunction = new MeanShiftClass();
+    CannyClass cannyFunction = new CannyClass();
+
+>>>>>>> parent of c595adf... AsyncTask Test:app/src/main/java/mattman/cipher/imageanalysis/MainActivity.java
     // For file saving so each is unique, date and time
     Calendar calendar = Calendar.getInstance();
 
     // Two important bitmaps, used to always hold 1 step back
+<<<<<<< HEAD:app/src/main/java/com/ac002/imageanalysis/MainActivity.java
     public Bitmap imageOriginal, imageModified;
 
+=======
+    Bitmap imageOriginal, imageModified;
+>>>>>>> parent of c595adf... AsyncTask Test:app/src/main/java/mattman/cipher/imageanalysis/MainActivity.java
     // Standard threshold for binarization/canny/others
     int threshold = 128;
 
@@ -350,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"Image saved", Toast.LENGTH_SHORT).show();
     }
 
+<<<<<<< HEAD:app/src/main/java/com/ac002/imageanalysis/MainActivity.java
     private void modifyImage(){
         if(currentAsync!=null){
             currentAsync.cancel(true);
@@ -418,6 +430,46 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+=======
+    private void showOriginalImage() {
+        mImageView.setImageResource(0);
+        mImageView.setImageBitmap(imageOriginal);
+        seekBar.setEnabled(false);
+        seekBar.setVisibility(View.VISIBLE);
+    }
+
+    private void useWatershed() {
+        imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
+        mImageView.setImageBitmap(imageModified);
+        seekBar.setEnabled(true);
+    }
+
+    private void useGrabCut() {
+        imageModified = grabcutFunction.ImageSegmentation(imageOriginal, positionXStart, positionYStart, positionXEnd, positionYEnd);
+        mImageView.setImageBitmap(imageModified);
+        seekBar.setEnabled(false);
+    }
+
+    private void useBinarization() {
+        imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
+        mImageView.setImageBitmap(imageModified);
+        seekBar.setEnabled(true);
+    }
+
+    private void useMeanShift() {
+        imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
+        mImageView.setImageBitmap(imageModified);
+        seekBar.setEnabled(false);
+
+    }
+
+    private void useCanny() {
+        imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
+        mImageView.setImageBitmap(imageModified);
+        seekBar.setEnabled(true);
+    }
+
+>>>>>>> parent of c595adf... AsyncTask Test:app/src/main/java/mattman/cipher/imageanalysis/MainActivity.java
     // Method for getting the image made by camera from Intent
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -425,8 +477,12 @@ public class MainActivity extends AppCompatActivity {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
             imageOriginal = imageBitmap;
+<<<<<<< HEAD:app/src/main/java/com/ac002/imageanalysis/MainActivity.java
             mImageView.setImageResource(0);
             mImageView.setImageBitmap(imageOriginal);
+=======
+            mImageView.setImageBitmap(imageBitmap);
+>>>>>>> parent of c595adf... AsyncTask Test:app/src/main/java/mattman/cipher/imageanalysis/MainActivity.java
         }
 
         // This wont work with too big images!
@@ -435,15 +491,20 @@ public class MainActivity extends AppCompatActivity {
             Bitmap imageBitmap = null;
             try {
                 imageBitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+<<<<<<< HEAD:app/src/main/java/com/ac002/imageanalysis/MainActivity.java
                 imageOriginal = imageBitmap;
                 imageModified = null;
                 mImageView.setImageDrawable(null);
                 STATE = STATE_ORIGINAL;
                 modifyImage();
+=======
+>>>>>>> parent of c595adf... AsyncTask Test:app/src/main/java/mattman/cipher/imageanalysis/MainActivity.java
             } catch (IOException e) {
                 Toast.makeText(this, "Error while loading image!", Toast.LENGTH_SHORT).show();
                 e.printStackTrace();
             }
+            imageOriginal = imageBitmap;
+            mImageView.setImageBitmap(imageBitmap);
         }
     }
 
@@ -460,50 +521,66 @@ public class MainActivity extends AppCompatActivity {
 
         int id = item.getItemId();
 
-        switch (id) {
-            case R.id.photofromfile:
-                dispatchTakeFromFileIntent();
-                return true;
-            case R.id.watershed:
-                STATE = STATE_WATERSHED;
-                modifyImage();
-                return true;
-            case R.id.grabcut:
-                STATE = STATE_GRABCUT;
-                modifyImage();
-                return true;
-            case R.id.binarization:
-                STATE = STATE_BINARY;
-                modifyImage();
-                return true;
-            case R.id.meanshift:
-                STATE = STATE_MEANSHIFT;
-                modifyImage();
-                return true;
-            case R.id.canny:
-                STATE = STATE_CANNY;
-                modifyImage();
-                return true;
-            case R.id.originalimage:
-                STATE = STATE_ORIGINAL;
-                modifyImage();
-                // Should be one more option to go back to modified one
-                // Eventually, create an array to hold multiple images!
-                imageModified = null;
-                return true;
-            case R.id.saveimage:
-                dispatchSaveFile();
-                return true;
-            case R.id.overwritebase:
-                if (imageModified != null) {
-                    imageOriginal = imageModified;
-                }
-                // Trying to overwrite the original image while not seeing the modified one
-                // Disabling it so it wont confuse the user
-                else {
-                    Toast.makeText(this, "Sorry I can't do that Dave", Toast.LENGTH_SHORT).show();
-                }
-                return true;
+        if (id == R.id.photofromfile) {
+            dispatchTakeFromFileIntent();
+            return true;
+        }
+
+        if (id == R.id.watershed) {
+            useWatershed();
+            STATE = STATE_WATERSHED;
+            return true;
+        }
+
+        if (id == R.id.grabcut) {
+            useGrabCut();
+            STATE = STATE_GRABCUT;
+            return true;
+        }
+
+        if (id == R.id.binarization) {
+            useBinarization();
+            STATE = STATE_BINARY;
+            return true;
+        }
+
+        if (id == R.id.meanshift) {
+            useMeanShift();
+            STATE = STATE_MEANSHIFT;
+            return true;
+        }
+
+        if (id == R.id.canny) {
+            useCanny();
+            STATE = STATE_CANNY;
+            return true;
+        }
+
+        if (id == R.id.originalimage) {
+            Log.i(TAG, "ShowImage");
+            STATE = STATE_ORIGINAL;
+            showOriginalImage();
+            imageModified=null;
+            return true;
+        }
+
+        if (id == R.id.saveimage){
+            Log.i(TAG,"SaveImage");
+            dispatchSaveFile();
+            return true;
+        }
+
+        if (id == R.id.overwritebase){
+            Log.i(TAG,"NewImage");
+            if(imageModified!=null){
+                imageOriginal = imageModified;
+            }
+            // Trying to overwrite the original image while not seeing the modified one
+            // Disabling it so it wont confuse the user
+            else {
+                Toast.makeText(this,"Sorry I can't do that Dave",Toast.LENGTH_SHORT).show();
+            }
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
