@@ -44,7 +44,7 @@ public class CannyClass extends AsyncTask<Void, Void, Bitmap> {
     @Override
     protected Bitmap doInBackground(Void... params) {
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
-
+    
         Mat markers2 = new Mat();
         Mat imageMatRGBA = new Mat();
         Utils.bitmapToMat(originalImage, imageMatRGBA, false);
