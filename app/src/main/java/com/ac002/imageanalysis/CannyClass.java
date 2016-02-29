@@ -1,23 +1,48 @@
-package mattman.cipher.imageanalysis;
+package com.ac002.imageanalysis;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import org.opencv.android.Utils;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-/**
- * Created by AlfaSqD on 2015-06-22.
- */
-public class CannyClass {
-    static final String TAG = "OpenCV CANNY";
+import mattman.ac002.imageanalysis.R;
 
-    public Bitmap ImageSegmentation(Bitmap originalImage, int threshold) {
+public class CannyClass extends AsyncTask<Void, Void, Bitmap> {
 
+    Activity mainActivity;
+    Bitmap originalImage;
+    int threshold;
+
+    public CannyClass(Activity main, Bitmap bitmap, int thresholdDesired) {
+        this.mainActivity = main;
+        this.originalImage = bitmap;
+        this.threshold = thresholdDesired;
+    }
+
+    @Override
+    protected void onPreExecute() {
+
+    }
+
+    @Override
+    protected void onPostExecute(Bitmap result) {
+        ProgressBar progressbar;
+        progressbar = (ProgressBar) mainActivity.findViewById(R.id.progressBar);
+        progressbar.setVisibility(View.GONE);
+        ImageView imageView;
+        imageView = (ImageView) mainActivity.findViewById(R.id.mImageView);
+        imageView.setImageBitmap(result);
+    }
+
+    @Override
+    protected Bitmap doInBackground(Void... params) {
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
 
         Mat markers2 = new Mat();
@@ -27,10 +52,10 @@ public class CannyClass {
         Mat imageMatEdge = new Mat();
 
         Imgproc.cvtColor(imageMatRGBA, imageMatGrey, Imgproc.COLOR_RGBA2GRAY);
-        Imgproc.Canny(imageMatGrey,imageMatEdge,80,threshold);
+        Imgproc.Canny(imageMatGrey, imageMatEdge, 80, threshold);
 
         Imgproc.dilate(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
-        Imgproc.erode(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,2)));
+        Imgproc.erode(imageMatEdge, imageMatEdge, Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)));
 
 
         /* Here is the segmentation part
@@ -51,7 +76,7 @@ public class CannyClass {
         //Scalar colorDiff = Scalar.all(0);
         //imageMatRGBA.copyTo(colorDiff, imageMatEdge);
 
-        Utils.matToBitmap(imageMatEdge,originalImage);
+        Utils.matToBitmap(imageMatEdge, originalImage);
         return originalImage;
     }
 }

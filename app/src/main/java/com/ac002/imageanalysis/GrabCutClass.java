@@ -1,10 +1,12 @@
-package mattman.cipher.imageanalysis;
+package com.ac002.imageanalysis;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.opencv.android.Utils;
@@ -14,7 +16,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Rect;
 import org.opencv.core.Point;
 
-import butterknife.Bind;
+import mattman.ac002.imageanalysis.R;
 
 /**
  * Created by TranCipher on 2015-06-21.
@@ -37,13 +39,14 @@ public class GrabCutClass extends AsyncTask<Void, Void, Bitmap>{
 
     @Override
     protected void onPreExecute() {
-        mainActivity.showDialog(1);
+
     }
 
     @Override
     protected void onPostExecute(Bitmap result) {
-        mainActivity.removeDialog(1);
-        Toast.makeText(mainActivity, "Obliczono!", Toast.LENGTH_SHORT).show();
+        ProgressBar progressbar;
+        progressbar = (ProgressBar) mainActivity.findViewById(R.id.progressBar);
+        progressbar.setVisibility(View.GONE);
         ImageView imageView;
         imageView = (ImageView) mainActivity.findViewById(R.id.mImageView);
         imageView.setImageBitmap(result);

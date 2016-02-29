@@ -1,4 +1,4 @@
-package mattman.cipher.opencvlibrary;
+package mattman.ac002.opencvlibrary;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

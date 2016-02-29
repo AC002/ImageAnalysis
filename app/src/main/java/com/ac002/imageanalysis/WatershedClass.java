@@ -1,7 +1,13 @@
-package mattman.cipher.imageanalysis;
+package com.ac002.imageanalysis;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -11,16 +17,31 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import mattman.ac002.imageanalysis.R;
+
 /**
  * Created by TranCipher on 2015-06-20.
  */
-public class WatershedClass {
+public class WatershedClass extends AsyncTask<Void, Void, Bitmap>{
 
     static final String TAG = "OpenCV WATERSHED";
+    Activity mainActivity;
+    Bitmap originalImage;
+    int threshold;
 
-    public Bitmap ImageSegmentation(Bitmap originalImage, int threshold){
+    public WatershedClass(Activity main, Bitmap bitmap, int threshold){
+        this.mainActivity = main;
+        this.originalImage = bitmap;
+        this.threshold = threshold;
+    }
 
+    @Override
+    protected void onPreExecute() {
 
+    }
+
+    @Override
+    protected Bitmap doInBackground(Void... params){
         originalImage = originalImage.copy(Bitmap.Config.ARGB_8888, true);
         //!
         Mat markers2 = new Mat();
@@ -72,5 +93,15 @@ public class WatershedClass {
         markers2.release();
 
         return bitmap;
+    }
+
+    @Override
+    protected void onPostExecute(Bitmap result) {
+        ProgressBar progressbar;
+        progressbar = (ProgressBar) mainActivity.findViewById(R.id.progressBar);
+        progressbar.setVisibility(View.GONE);
+        ImageView imageView;
+        imageView = (ImageView) mainActivity.findViewById(R.id.mImageView);
+        imageView.setImageBitmap(result);
     }
 }

@@ -1,4 +1,4 @@
-package mattman.cipher.imageanalysis.util;
+package com.ac002.imageanalysis.util;
 
 import android.annotation.TargetApi;
 import android.app.Activity;

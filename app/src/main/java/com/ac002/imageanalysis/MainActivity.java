@@ -1,4 +1,4 @@
-package mattman.cipher.imageanalysis;
+package com.ac002.imageanalysis;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -6,12 +6,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -19,12 +18,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.Toast;
+import java.util.ArrayList;
 
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,7 @@ import java.io.OutputStream;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import mattman.ac002.imageanalysis.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
     static final String TAG = "MainActivity";
 
     // App state, means which option (watershed? grabcut?) is being used right now
-    // Used in logic to deny menus
+    // Used in logic to deny menus and as a shortcut
     int STATE = 0;
 
     // Binding all important things using the ButterKnife
@@ -77,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.fabFolder) FloatingActionButton fabFolder;
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.bottombar) Toolbar bottombar;
+    @Bind(R.id.progressBar)ProgressBar progressbar;
+
+    AsyncTask currentAsync;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -111,19 +116,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Creating classes which are used to modify image
-    WatershedClass watershedFunction = new WatershedClass();
-    BinarizationClass binarizationFunction = new BinarizationClass();
-    MeanShiftClass meanShiftFunction = new MeanShiftClass();
-    CannyClass cannyFunction = new CannyClass();
-
     // For file saving so each is unique, date and time
     Calendar calendar = Calendar.getInstance();
 
     // Two important bitmaps, used to always hold 1 step back
     public Bitmap imageOriginal, imageModified;
+
     // Standard threshold for binarization/canny/others
     int threshold = 128;
+
     // Special values for grabCut
     boolean grabCutBadSelection = false;
     int positionXStart = 0;
@@ -156,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 threshold = progress;
+                modifyImage();
             }
 
             @Override
@@ -165,13 +167,11 @@ public class MainActivity extends AppCompatActivity {
             // When user stops touching, the value is being used for current option
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if (STATE == 1) {
-                    mImageView.setImageBitmap(watershedFunction.ImageSegmentation(imageOriginal, threshold));
-                } else if (STATE == 3) {
-                    mImageView.setImageBitmap(binarizationFunction.ImageSegmentation(imageOriginal, threshold));
-                } else if (STATE == 5) {
-                    mImageView.setImageBitmap(cannyFunction.ImageSegmentation(imageOriginal, threshold));
-                }
+                // If you want to modify after setting the seekbar, do it here
+                // It is way better for big images, though small images look better when
+                // you can dynamically change it.
+
+                // modifyImage();
             }
         });
 
@@ -191,23 +191,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-/* //For future
-        cameraImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dispatchTakePictureIntent();
-            }
-        });
-
-        galleryImageButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-                dispatchTakeFromFileIntent();
-            }
-
-        });*/
-
-        // If image is pressed anywhere, use animation to hide toolbar and FAB buttons
+        // If mImageView is pressed anywhere, use animation to hide toolbar and FAB buttons
         mImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -367,6 +351,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void modifyImage(){
+        if(currentAsync!=null){
+            currentAsync.cancel(true);
+
+            Log.d("Alfa","Async status: "+ currentAsync.isCancelled());
+        }
+        else{
+        }
+
         switch(STATE){
             case STATE_ORIGINAL:
                 mImageView.setImageResource(0);
@@ -374,51 +366,56 @@ public class MainActivity extends AppCompatActivity {
                 seekBar.setEnabled(false);
                 seekBar.setVisibility(View.VISIBLE);
                 break;
+
             case STATE_BINARY:
-                imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
+                BinarizationClass binaryFunction = new BinarizationClass(this, imageOriginal, threshold);
+                currentAsync = binaryFunction;
+                binaryFunction.execute();
+                imageModified = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
                 seekBar.setEnabled(true);
+                progressbar.setVisibility(View.VISIBLE);
                 break;
+
             case STATE_CANNY:
-                imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
+                CannyClass cannyFunction = new CannyClass(this, imageOriginal, threshold);
+                currentAsync = cannyFunction;
+                cannyFunction.execute();
+                imageModified = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
                 seekBar.setEnabled(true);
+                progressbar.setVisibility(View.VISIBLE);
                 break;
+
             case STATE_GRABCUT:
                 GrabCutClass grabcutFunction = new GrabCutClass(this,imageOriginal,positionXStart,positionYStart,positionXEnd,positionYEnd);
+                currentAsync = grabcutFunction;
                 grabcutFunction.execute();
                 imageModified = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
                 seekBar.setEnabled(false);
+                progressbar.setVisibility(View.VISIBLE);
                 break;
+
             case STATE_MEANSHIFT:
-                imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
-                mImageView.setImageBitmap(imageModified);
+                MeanShiftClass meanShiftFunction = new MeanShiftClass(this, imageOriginal);
+                currentAsync = meanShiftFunction;
+                meanShiftFunction.execute();
+                imageModified = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
                 seekBar.setEnabled(false);
+                progressbar.setVisibility(View.VISIBLE);
                 break;
+
             case STATE_WATERSHED:
-                imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
+                WatershedClass watershedFunction = new WatershedClass(this,imageOriginal,threshold);
+                currentAsync = watershedFunction;
+                watershedFunction.execute();
+                imageModified = ((BitmapDrawable)mImageView.getDrawable()).getBitmap();
                 seekBar.setEnabled(true);
+                progressbar.setVisibility(View.VISIBLE);
                 break;
+
             default:
                Toast.makeText(this,"This should not have happened",Toast.LENGTH_SHORT);
                break;
         }
-    }
-
-    @Override
-    public Dialog onCreateDialog(int dialogId) {
-        switch (dialogId) {
-            case 1:
-                ProgressDialog dialog = new ProgressDialog(this);
-                dialog.setTitle("Obliczanie");
-                dialog.setMessage("Proszę czekać....");
-                dialog.setCancelable(true);
-                return dialog;
-            default:
-                break;
-        }
-        return null;
     }
 
     // Method for getting the image made by camera from Intent
@@ -430,7 +427,6 @@ public class MainActivity extends AppCompatActivity {
             imageOriginal = imageBitmap;
             mImageView.setImageResource(0);
             mImageView.setImageBitmap(imageOriginal);
-            Log.d("Alfa","Image set to original");
         }
 
         // This wont work with too big images!
@@ -444,7 +440,6 @@ public class MainActivity extends AppCompatActivity {
                 mImageView.setImageDrawable(null);
                 STATE = STATE_ORIGINAL;
                 modifyImage();
-                Log.d("Alfa","Image set to original");
             } catch (IOException e) {
                 Toast.makeText(this, "Error while loading image!", Toast.LENGTH_SHORT).show();
                 e.printStackTrace();

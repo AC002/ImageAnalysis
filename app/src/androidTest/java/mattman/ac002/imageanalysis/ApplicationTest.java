@@ -1,4 +1,4 @@
-package mattman.cipher.imageanalysis;
+package mattman.ac002.imageanalysis;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
