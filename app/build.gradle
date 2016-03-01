@@ -32,6 +32,8 @@ dependencies {
     compile 'com.jakewharton:butterknife:+'
     compile 'com.jakewharton.timber:timber:2.5.0'
     compile 'com.facebook.rebound:rebound:0.3.6'
+    compile 'io.reactivex:rxjava:1.1.1'
+    compile 'io.reactivex:rxandroid:1.0.1'
 
     compile project(':openCVLibrary')
     compile 'com.android.support:support-v4:22.0.0'

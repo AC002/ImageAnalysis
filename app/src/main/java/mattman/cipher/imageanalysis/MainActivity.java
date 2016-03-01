@@ -19,6 +19,7 @@ import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -37,6 +38,13 @@ import java.io.OutputStream;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import rx.*;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.android.schedulers.HandlerScheduler;
+import rx.functions.Action;
+import rx.functions.Action1;
+import rx.functions.Func0;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,6 +81,10 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.fabFolder) FloatingActionButton fabFolder;
     @Bind(R.id.toolbar) Toolbar toolbar;
     @Bind(R.id.bottombar) Toolbar bottombar;
+    @Bind(R.id.progressBar) ProgressBar progressbar;
+
+    Observable myObservable;
+    Subscriber<Bitmap> mySubscriber;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -147,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
         seekBar.setEnabled(false);
         seekBar.setVisibility(View.VISIBLE);
+        progressbar.setVisibility(View.GONE);
 
         // Seekbar, to change threshold value
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -162,13 +175,7 @@ public class MainActivity extends AppCompatActivity {
             // When user stops touching, the value is being used for current option
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                if (STATE == 1) {
-                    mImageView.setImageBitmap(watershedFunction.ImageSegmentation(imageOriginal, threshold));
-                } else if (STATE == 3) {
-                    mImageView.setImageBitmap(binarizationFunction.ImageSegmentation(imageOriginal, threshold));
-                } else if (STATE == 5) {
-                    mImageView.setImageBitmap(cannyFunction.ImageSegmentation(imageOriginal, threshold));
-                }
+                modifyImage();
             }
         });
 
@@ -363,6 +370,8 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this,"Image saved", Toast.LENGTH_SHORT).show();
     }
 
+
+
     private void modifyImage(){
 
         switch(STATE){
@@ -371,46 +380,81 @@ public class MainActivity extends AppCompatActivity {
                 mImageView.setImageBitmap(imageOriginal);
                 seekBar.setEnabled(false);
                 seekBar.setVisibility(View.VISIBLE);
-                break;
+                return;
 
             case STATE_BINARY:
-                imageModified = binarizationFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
-                seekBar.setEnabled(true);
-                break;
-
             case STATE_CANNY:
-                imageModified = cannyFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
+            case STATE_WATERSHED:
                 seekBar.setEnabled(true);
-                //progressbar.setVisibility(View.VISIBLE);
                 break;
 
             case STATE_GRABCUT:
-                imageModified = grabcutFunction.ImageSegmentation(imageOriginal, positionXStart, positionYStart, positionXEnd, positionYEnd);
-                mImageView.setImageBitmap(imageModified);
-                seekBar.setEnabled(false);
-                //progressbar.setVisibility(View.VISIBLE);
-                break;
-
             case STATE_MEANSHIFT:
-                imageModified = meanShiftFunction.ImageSegmentation(imageOriginal);
-                mImageView.setImageBitmap(imageModified);
                 seekBar.setEnabled(false);
-                //progressbar.setVisibility(View.VISIBLE);
-                break;
-
-            case STATE_WATERSHED:
-                imageModified = watershedFunction.ImageSegmentation(imageOriginal, threshold);
-                mImageView.setImageBitmap(imageModified);
-                seekBar.setEnabled(true);
-                //progressbar.setVisibility(View.VISIBLE);
                 break;
 
             default:
                 Toast.makeText(this,"This should not have happened",Toast.LENGTH_SHORT);
-                break;
+                return;
         }
+
+        Subscriber<Bitmap> mySubscriber = new Subscriber<Bitmap>() {
+            @Override
+            public void onNext(Bitmap bitmap) {
+                Log.e("Alfa","TEST");
+                imageModified = bitmap;
+            }
+            @Override
+            public void onCompleted() {
+                Log.e("Alfa","ONCOMPLETED START");
+                mImageView.setImageBitmap(imageModified);
+                progressbar.setVisibility(View.GONE);
+                //mySubscriber.unsubscribe();
+                Log.e("Alfa","ONCOMPLETED END");
+            }
+            @Override
+            public void onError(Throwable e) {
+                Log.e("Alfa","ERROR: "+ e.toString());
+            }
+        };
+
+       Observable myObservable = Observable.create(
+                new Observable.OnSubscribe<Bitmap>() {
+                    @Override
+                    public void call(Subscriber<? super Bitmap> subscriber) {
+                        Log.e("Alfa","Most important place1");
+                        switch(STATE){
+                            case STATE_WATERSHED:
+                                subscriber.onNext(watershedFunction.ImageSegmentation(imageOriginal, threshold));
+                                break;
+                            case STATE_CANNY:
+                                subscriber.onNext(cannyFunction.ImageSegmentation(imageOriginal, threshold));
+                                break;
+                            case STATE_BINARY:
+                                subscriber.onNext(binarizationFunction.ImageSegmentation(imageOriginal, threshold));
+                                break;
+                            case STATE_GRABCUT:
+                                subscriber.onNext(grabcutFunction.ImageSegmentation(imageOriginal, positionXStart,positionYStart,positionXEnd,positionYEnd));
+                                break;
+                            case STATE_MEANSHIFT:
+                                subscriber.onNext(meanShiftFunction.ImageSegmentation(imageOriginal));
+                                break;
+                        }
+                        subscriber.onCompleted();
+                    }
+                });
+
+
+        if(mySubscriber.isUnsubscribed() == true) {
+            Log.e("Alfa", "Bool: "+mySubscriber.isUnsubscribed());
+            mySubscriber.unsubscribe();
+            Toast.makeText(this,"Unsub",Toast.LENGTH_SHORT).show();
+        }
+
+        myObservable.subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(mySubscriber);
+        progressbar.setVisibility(View.VISIBLE);
     }
 
     // Method for getting the image made by camera from Intent
@@ -434,7 +478,9 @@ public class MainActivity extends AppCompatActivity {
                 imageModified = null;
                 mImageView.setImageDrawable(null);
                 STATE = STATE_ORIGINAL;
-                modifyImage();
+                mImageView.setImageResource(0);
+                mImageView.setImageBitmap(imageOriginal);
+                //modifyImage();
             } catch (IOException e) {
                 Toast.makeText(this, "Error while loading image!", Toast.LENGTH_SHORT).show();
                 e.printStackTrace();
